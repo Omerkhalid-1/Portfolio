@@ -1,0 +1,48 @@
+{
+  "projects": [
+    {
+      "name": "TelcoX: AI-Powered Telecom Assistant",
+      "github": "https://github.com/Omerkhalid-1/TelcoX"
+    },
+    {
+      "name": "Deepfake Detection System",
+      "github": "https://github.com/Omerkhalid-1/WorkSync_FYP"
+    },
+    {
+      "name": "Document Intelligence System (RAG)",
+      "github": "https://github.com/Omerkhalid-1/RAG_Template"
+    },
+    {
+      "name": "Face Sketch-to-Photo Synthesis",
+      "github": "https://github.com/Omerkhalid-1/face-sketch-synthesis"
+    },
+    {
+      "name": "Northern Explorers",
+      "github": "https://github.com/Omerkhalid-1/smd-assignment-1"
+    }
+  ],
+  "research": [
+    {
+      "name": "Benchmarking Vision Transformers Against Traditional Architectures",
+      "github": "https://ieeexplore.ieee.org/document/11141063"
+    },
+    {
+      "name": "Advanced Artwork Glazing and Misclassification Techniques",
+      "github": "https://github.com/Omerkhalid-1/KDD-Art-Glazing-"
+    }
+  ],
+  "miniProjects": [
+    {
+      "name": "N-gram Language Model",
+      "github": "https://github.com/Omerkhalid-1/N-gram-Sentiment-analysis"
+    },
+    {
+      "name": "Sentiment Analysis",
+      "github": "https://github.com/Omerkhalid-1/N-gram-Sentiment-analysis"
+    },
+    {
+      "name": "Safety App",
+      "github": "https://github.com/Omerkhalid-1/smd-assignment-1"
+    }
+  ]
+}
