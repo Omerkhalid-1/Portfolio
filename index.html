@@ -108,6 +108,7 @@
   <template id="tpl-hero">
     <nav class="navbar" id="navbar">
       <div class="container">
+        <a href="#hero" class="nav-logo">OK.</a>
         <ul class="nav-links" id="nav-links">
           <li><a href="#hero">Home</a></li>
           <li><a href="#experience">Experience</a></li>
@@ -751,9 +752,18 @@
 
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      const FIREFLY_COUNT = reduce ? 18 : 120;
-      const BEACON_COUNT = reduce ? 2 : 7;        // strong-pulsing beacons
-      const APPROACH_COUNT = 8;                     // how many fireflies "approach" per section
+      /* Detect mobile/touch devices and low-end devices so we can cap firefly
+         counts. The check uses a combination of:
+           - viewport width (most reliable for "phone" detection)
+           - hardware concurrency (low-end CPUs report ≤4 logical cores)
+         On either signal we drop the count significantly. */
+      const isMobile = window.matchMedia('(max-width: 768px), (pointer: coarse) and (hover: none)').matches;
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 4;
+      const lite = isMobile || isLowEnd;
+
+      const FIREFLY_COUNT = reduce ? 18 : (lite ? 50 : 120);
+      const BEACON_COUNT = reduce ? 2 : (lite ? 4 : 7);
+      const APPROACH_COUNT = lite ? 5 : 8;
 
       const rand = (min, max) => Math.random() * (max - min) + min;
       const choice = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -928,14 +938,18 @@
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduce) return;
 
-      /* --- 1. Shooting stars: spawn frequently with occasional bursts ----- */
+      const isMobile = window.matchMedia('(max-width: 768px), (pointer: coarse) and (hover: none)').matches;
+      const isLowEnd = (navigator.hardwareConcurrency || 4) <= 4;
+      const lite = isMobile || isLowEnd;
+
+      /* --- 1. Shooting stars: spawn frequently with occasional bursts -----
+         On mobile we space them out more (~7-15s) and disable burst pairs. */
       function spawnShootingStar() {
         const star = document.createElement('div');
         star.className = 'shooting-star';
-        // Start anywhere in the upper 75% of the screen, off the left edge
-        const startY = (Math.random() * 75) + 5;        // 5%–80%
-        const angle = (Math.random() * 30) + 15;        // 15°–45° downward
-        const dur = (Math.random() * 0.8) + 1.0;      // 1.0s–1.8s
+        const startY = (Math.random() * 75) + 5;
+        const angle = (Math.random() * 30) + 15;
+        const dur = (Math.random() * 0.8) + 1.0;
         star.style.setProperty('--start-y', startY + '%');
         star.style.setProperty('--start-x', '-15vw');
         star.style.setProperty('--angle', angle + 'deg');
@@ -943,13 +957,13 @@
         document.body.appendChild(star);
         setTimeout(() => star.remove(), dur * 1000 + 200);
 
-        // 25% chance: spawn a "follow-up" star 200-500ms later — a pair!
-        if (Math.random() < 0.25) {
+        // Burst pair — desktop only; doubles the per-star compositing work
+        if (!lite && Math.random() < 0.25) {
           setTimeout(() => {
             const followup = document.createElement('div');
             followup.className = 'shooting-star';
-            const fy = startY + (Math.random() * 12) - 6;   // nearby Y
-            const fa = angle + (Math.random() * 10) - 5;    // similar angle
+            const fy = startY + (Math.random() * 12) - 6;
+            const fa = angle + (Math.random() * 10) - 5;
             const fd = (Math.random() * 0.6) + 0.9;
             followup.style.setProperty('--start-y', fy + '%');
             followup.style.setProperty('--start-x', '-15vw');
@@ -960,14 +974,18 @@
           }, (Math.random() * 300) + 200);
         }
 
-        // Schedule the next one — much more frequent than before
-        const nextDelay = (Math.random() * 5000) + 3500;     // 3.5s–8.5s
+        // Mobile: 7–15s gap. Desktop: 3.5–8.5s gap.
+        const nextDelay = lite
+          ? (Math.random() * 8000) + 7000
+          : (Math.random() * 5000) + 3500;
         setTimeout(spawnShootingStar, nextDelay);
       }
-      // First star after just 2-4s — get the show going quickly
       setTimeout(spawnShootingStar, (Math.random() * 2000) + 2000);
 
-      /* --- 2. Cursor aura: smooth-tracked gold halo --------------------- */
+      /* --- 2. Cursor aura: skip entirely on touch/mobile devices.
+         Hover doesn't apply, and the rAF loop runs even when nothing moves. */
+      if (lite) return;
+
       const aura = document.getElementById('cursor-aura');
       if (!aura) return;
 

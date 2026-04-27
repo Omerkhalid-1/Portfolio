@@ -3009,3 +3009,102 @@ body.all-unlocked .unlock-hud {
   pointer-events: none;
   z-index: 1;
 }
+
+/* ============================================
+   MOBILE PERFORMANCE OVERRIDES
+   ────────────────────────────────────────────
+   On phones the expensive effects (backdrop-filter, large blur radii, 120
+   animated fireflies) drop framerate to ~15-20fps. Desktop keeps the full
+   majestic treatment; mobile gets a leaner version that looks similar at 60fps.
+
+   Strategy:
+     1. Kill backdrop-filter on cards/sections — most expensive on mobile GPUs.
+        Compensate by making card backgrounds slightly more opaque (so they
+        stay readable without the frosted-glass softening).
+     2. Shrink the nebula blur radius from 140px → 60px (huge GPU saving).
+     3. Drop nebula opacity slightly so without the heavy blur it doesn't
+        look chunky.
+     4. The firefly count is reduced by the JS (see updated script).
+   ============================================ */
+@media (max-width: 768px),
+(pointer: coarse) and (hover: none) {
+
+  /* (1) Disable backdrop-filter — biggest single perf win on mobile.
+         Compensate by making card backgrounds more opaque so text stays
+         readable without the frosted-glass softening. */
+  .timeline-card,
+  .cert-card,
+  .project-card,
+  .skill-category,
+  .research-card,
+  .education-item,
+  .extras-item,
+  .stat-item,
+  section.experience,
+  section.research,
+  section.projects,
+  section.skills,
+  section.certifications,
+  section.education,
+  section.extras,
+  section.stats,
+  .navbar,
+  .navbar.scrolled,
+  .unlock-hud {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Make card/section bg a bit more opaque so legibility is preserved */
+  :root {
+    --bg-card: rgba(20, 20, 20, 0.78);
+    --bg-card-hover: rgba(30, 30, 30, 0.88);
+    --bg-primary: rgba(10, 10, 10, 0.78);
+    --bg-secondary: rgba(17, 17, 17, 0.75);
+  }
+
+  .navbar.scrolled {
+    background: rgba(10, 10, 10, 0.92);
+  }
+
+  /* (2) Shrink nebula blur radius dramatically. 140px is an extreme GPU op
+         on mobile; 60px gives a similar soft look at a fraction of the cost.
+         Also drop two of the five blobs entirely. */
+  .nebula__blob {
+    filter: blur(60px);
+    opacity: 0.42;
+    mix-blend-mode: normal;
+    /* blend modes force extra compositor layers */
+  }
+
+  .nebula__blob--4,
+  .nebula__blob--5 {
+    display: none;
+    /* keep 3, ditch 2 */
+  }
+
+  /* (3) Disable the cursor aura — pointer hover doesn't apply on touch
+         devices anyway, but the rAF loop runs regardless. */
+  .cursor-aura {
+    display: none !important;
+  }
+
+  /* (4) Calm the firefly glow halos — large box-shadows are surprisingly
+         expensive when 60+ elements all use them simultaneously. */
+  .firefly {
+    box-shadow:
+      0 0 calc(var(--glow-size, 12px) * 0.6) rgba(255, 215, 130, 0.7);
+  }
+
+  .firefly--beacon {
+    box-shadow:
+      0 0 calc(var(--glow-size, 12px) * 0.8) rgba(255, 230, 160, 0.85),
+      0 0 calc(var(--glow-size, 12px) * 1.5) rgba(255, 200, 100, 0.4);
+  }
+
+  /* (5) Reduce shooting-star drop-shadow (cheap individually, but the
+         filter compositing cost adds up). */
+  .shooting-star {
+    filter: blur(0.5px) drop-shadow(0 0 6px rgba(255, 215, 130, 0.85));
+  }
+}
