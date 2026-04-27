@@ -2200,25 +2200,29 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Slots collapse to natural content height once mounted */
-  transition: min-height 1s ease;
+  /* No transitions — the slot collapses instantly when mounted. The previous
+     `transition: min-height 1s ease` made content "settle" for a full second
+     after click, causing perceived delay even though the section was rendered. */
 }
 
-/* Once a slot has its real content, it grows to that content's natural height */
+/* Once a slot has its real content, it grows to that content's natural height.
+   Instant — no animation. */
 .section-slot--mounted {
   min-height: 0;
+  display: block;
+  /* drop the flex centering — content flows naturally */
 }
 
-/* Inside an unmounted slot: the firefly is hidden by default and only fades
-   in when the slot is scrolled into view. */
+/* Inside an unmounted slot: the firefly is hidden until its slot is in view.
+   No transitions on opacity/transform — fireflies appear and disappear instantly
+   so clicks feel snappy, not soft. */
 .section-slot:not(.section-slot--mounted) .unlock-firefly {
   opacity: 0;
   transform: scale(0.7);
   pointer-events: none;
-  transition: opacity 1s ease, transform 1s ease;
 }
 
-/* Revealed: firefly fades in once the slot is ≥30% visible */
+/* Revealed: firefly appears once the slot is ≥30% visible */
 .section-slot--revealed:not(.section-slot--mounted) .unlock-firefly {
   opacity: 1;
   transform: scale(1);
@@ -2363,64 +2367,12 @@ img {
   outline-offset: 6px;
 }
 
-/* Pop animation when clicked */
-.unlock-firefly--popping {
-  animation: unlockFireflyPop 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-  pointer-events: none;
-}
-
-@keyframes unlockFireflyPop {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-    filter: brightness(1);
-  }
-
-  30% {
-    transform: scale(3);
-    opacity: 1;
-    filter: brightness(3) saturate(1.5);
-  }
-
-  60% {
-    transform: scale(2.4);
-    opacity: 0.5;
-    filter: brightness(2);
-  }
-
-  100% {
-    transform: scale(0.4);
-    opacity: 0;
-    filter: brightness(1);
-  }
-}
-
-.unlock-firefly--popping::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 215, 130, 0.9);
-  box-shadow: 0 0 20px rgba(255, 215, 130, 0.7);
-  animation: unlockRingExpand 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-}
-
-@keyframes unlockRingExpand {
-  0% {
-    transform: scale(0.5);
-    opacity: 1;
-    border-color: rgba(255, 240, 190, 1);
-  }
-
-  100% {
-    transform: scale(15);
-    opacity: 0;
-    border-color: rgba(212, 168, 80, 0.1);
-  }
-}
+/* No pop animation. Click → firefly is removed synchronously by JS, content
+   appears in the same frame. Any animation here would compete with that
+   instantaneous swap and add perceived delay. */
 
 /* ============================================
-   UNLOCKED SECTION ENTRANCE
+   UNLOCKED SECTION
    ============================================ */
 .unlocked-section {
   display: block;
@@ -2428,143 +2380,9 @@ img {
   width: 100%;
 }
 
-.unlocked-section.unlocking {
-  animation: sectionEntrance 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-}
-
-@keyframes sectionEntrance {
-  0% {
-    opacity: 0;
-    transform: translateY(28px);
-    filter: blur(8px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-
-/* Scan line that sweeps top-to-bottom on entrance */
-.unlocked-section.unlocking::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 215, 130, 0) 10%,
-      rgba(255, 215, 130, 1) 50%,
-      rgba(255, 215, 130, 0) 90%,
-      transparent 100%);
-  box-shadow: 0 0 20px rgba(255, 215, 130, 0.8);
-  pointer-events: none;
-  animation: scanLineSweep 1.2s ease-out forwards;
-  z-index: 100;
-}
-
-@keyframes scanLineSweep {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-
-  10% {
-    opacity: 1;
-  }
-
-  90% {
-    opacity: 1;
-  }
-
-  100% {
-    transform: translateY(100vh);
-    opacity: 0;
-  }
-}
-
-/* ============================================
-   TEXT REVEAL — color transition mechanism
-   ────────────────────────────────────────────
-   Initial state (`.text-reveal` without .lit):
-     EVERY descendant has `color: transparent` and `border-color: transparent`.
-     This makes text and borders invisible against the dark background, EXACTLY
-     as the brief specified ("color identical to the background-color").
-
-   Reveal state (`.text-reveal.text-reveal--lit`):
-     The transparent override is removed. Each descendant returns to its
-     normal stylesheet color. Because we add a transition on the `color` and
-     `border-color` properties before flipping, the change is a smooth fade,
-     not a snap.
-
-   This works for any HTML structure inside the template — no need to tag
-   individual elements. Backgrounds, gradients, and images are unaffected.
-   ============================================ */
-.text-reveal,
-.text-reveal * {
-  /* Hide all foreground colors. !important to defeat the cascade from the
-     real section CSS. We layer a transition on every descendant so the
-     un-hiding fades smoothly.
-     0.6s feels responsive in production; 1.5s felt like a load delay. */
-  color: transparent !important;
-  border-color: transparent !important;
-  text-shadow: none !important;
-  transition: color 0.6s ease, border-color 0.6s ease, text-shadow 0.6s ease, fill 0.6s ease, stroke 0.6s ease !important;
-}
-
-/* SVG/icon strokes & fills also fade (lucide icons are SVG) */
-.text-reveal svg,
-.text-reveal svg * {
-  fill: transparent !important;
-  stroke: transparent !important;
-}
-
-/* Once lit, drop all the transparent overrides. The transition above carries
-   each property smoothly to its real stylesheet value. */
-.text-reveal--lit,
-.text-reveal--lit * {
-  color: unset !important;
-  border-color: unset !important;
-  text-shadow: unset !important;
-}
-
-.text-reveal--lit svg,
-.text-reveal--lit svg * {
-  fill: unset !important;
-  stroke: unset !important;
-}
-
-/* Optional touch: while NOT lit, the wrapper has a subtle gold glow that
-   suggests "something is here" without revealing what. */
-.text-reveal:not(.text-reveal--lit) {
-  position: relative;
-}
-
-.text-reveal:not(.text-reveal--lit)::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center,
-      rgba(212, 168, 80, 0.04) 0%,
-      transparent 60%);
-  pointer-events: none;
-  animation: revealHaze 3s ease-in-out infinite;
-}
-
-@keyframes revealHaze {
-
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
-}
+/* Note: the .unlocking entrance animation, scan line, and text-reveal color
+   transition were all removed — the user wants instant content on click,
+   not a fade. Sections now appear with their real styling immediately. */
 
 /* ============================================
    HUD — progress + reset
@@ -2670,25 +2488,8 @@ body.all-unlocked .unlock-hud {
 
   .unlock-firefly,
   .unlock-firefly--urgent,
-  .unlock-firefly--popping,
-  .unlock-firefly--popping::after,
-  .unlocked-section.unlocking,
-  .unlocked-section.unlocking::before,
-  .unlock-welcome__line,
-  .text-reveal:not(.text-reveal--lit)::after {
+  .unlock-welcome__line {
     animation: none !important;
-  }
-
-  .unlocked-section.unlocking {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-
-  /* Color transition still happens but very fast */
-  .text-reveal,
-  .text-reveal * {
-    transition-duration: 0.3s !important;
   }
 }
 

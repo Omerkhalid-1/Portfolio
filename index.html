@@ -1208,11 +1208,10 @@
         if (unlocked.has(targetId)) return;
         unlocked.add(targetId);
 
-        // (D1) Pop firefly + stop its escalation
+        // (D1) Stop the firefly's escalating pulse + remove it instantly.
+        //      The pop animation is gone — no setTimeout, no lingering element,
+        //      no competing animation. The user wants content NOW.
         stopEscalation(firefly);
-        firefly.classList.remove('unlock-firefly--urgent');
-        firefly.classList.add('unlock-firefly--popping');
-        setTimeout(() => firefly.remove(), 800);
 
         // (D2) Clone template
         const tpl = document.getElementById('tpl-' + targetId);
@@ -1227,45 +1226,31 @@
           el.classList.remove('animate-on-scroll');
         });
 
-        // (D3) Wrap in text-reveal shell.
+        // (D3) Plain wrapper — no entrance animation, no fade.
         const reveal = document.createElement('div');
-        reveal.className = 'text-reveal unlocked-section unlocking';
+        reveal.className = 'unlocked-section';
         reveal.dataset.section = targetId;
         reveal.appendChild(fragment);
 
-        // Slot becomes the mounted section: replace its content with the reveal wrapper.
+        // Slot becomes the mounted section: replace its content synchronously.
+        // The CSS rule `.section-slot--mounted` removes the min-height: 100vh
+        // immediately so the section snaps to its natural height.
         slot.classList.add('section-slot--mounted');
-        slot.innerHTML = '';        // remove the (now-popped) firefly placeholder
+        slot.innerHTML = '';        // remove the firefly placeholder instantly
         slot.appendChild(reveal);
 
-        // (D4) Trigger the color transition. Reading offsetHeight forces the
-        //      browser to flush styles synchronously — that's faster and more
-        //      reliable in production than the 2-rAF dance, which can stall
-        //      under heavy CPU load on slow devices. After the read, adding
-        //      .text-reveal--lit reliably triggers the CSS color transition.
-        // eslint-disable-next-line no-unused-expressions
-        reveal.offsetHeight;        // force reflow
-        reveal.classList.add('text-reveal--lit');
-
-        // (D5) Drop entrance class after animation
-        setTimeout(() => reveal.classList.remove('unlocking'), 1300);
-
-        // (D6) Re-init lucide icons ONLY for icons inside this new fragment.
-        //      Calling lucide.createIcons() with no args scans the entire
-        //      document — gets slower each unlock. Targeting the wrapper is O(1).
+        // (D4) Re-init lucide icons ONLY for icons inside this new fragment.
         if (window.lucide && typeof window.lucide.createIcons === 'function') {
           try {
-            // Newer lucide API accepts { nodes: [...] }
             window.lucide.createIcons({
               nodes: reveal.querySelectorAll('[data-lucide]')
             });
           } catch (e) {
-            // Fallback for older versions: full scan
             window.lucide.createIcons();
           }
         }
 
-        // (D7) Update HUD
+        // (D5) Update HUD
         if (countEl) countEl.textContent = unlocked.size;
         if (unlocked.size === slots.length) {
           document.body.classList.add('all-unlocked');
