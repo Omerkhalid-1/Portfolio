@@ -2507,11 +2507,12 @@ img {
 .text-reveal * {
   /* Hide all foreground colors. !important to defeat the cascade from the
      real section CSS. We layer a transition on every descendant so the
-     un-hiding fades smoothly. */
+     un-hiding fades smoothly.
+     0.6s feels responsive in production; 1.5s felt like a load delay. */
   color: transparent !important;
   border-color: transparent !important;
   text-shadow: none !important;
-  transition: color 1.5s ease, border-color 1.5s ease, text-shadow 1.5s ease, fill 1.5s ease, stroke 1.5s ease !important;
+  transition: color 0.6s ease, border-color 0.6s ease, text-shadow 0.6s ease, fill 0.6s ease, stroke 0.6s ease !important;
 }
 
 /* SVG/icon strokes & fills also fade (lucide icons are SVG) */

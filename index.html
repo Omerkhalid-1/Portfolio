@@ -8,7 +8,10 @@
   <meta name="description"
     content="Portfolio of Syed Muhammad Omer Khalid — Associate Consultant specializing in enterprise integration, API management, and AI/ML." />
   <link rel="stylesheet" href="style.css" />
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <!-- Lucide is deferred — without `defer`, this CDN request blocks every
+       byte of HTML parsing until unpkg responds, which on production causes
+       the page (and the firefly text-reveal) to feel like it's loading late. -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 </head>
 
 <body>
@@ -105,7 +108,6 @@
   <template id="tpl-hero">
     <nav class="navbar" id="navbar">
       <div class="container">
-        <a href="#hero" class="nav-logo">OK.</a>
         <ul class="nav-links" id="nav-links">
           <li><a href="#hero">Home</a></li>
           <li><a href="#experience">Experience</a></li>
@@ -1062,8 +1064,16 @@
     })();
   </script>
 
-  <script src="script.js"></script>
-  <script>lucide.createIcons();</script>
+  <script src="script.js" defer></script>
+  <script>
+    /* Lucide is deferred — wait for it to define `window.lucide` before
+       calling createIcons. If lucide already loaded (cached), run immediately. */
+    if (window.lucide) {
+      window.lucide.createIcons();
+    } else {
+      window.addEventListener('load', () => window.lucide && window.lucide.createIcons());
+    }
+  </script>
   <script>
     /* ═══════════════════════════════════════
        FIREFLY UI UNLOCK — scroll-driven sequential discovery
@@ -1199,9 +1209,7 @@
           el.classList.remove('animate-on-scroll');
         });
 
-        // (D3) Wrap in text-reveal shell. Initial state: every text descendant
-        // is `color: transparent`. After insertion, on the next frame, we add
-        // .text-reveal--lit which CSS-transitions everything to gold.
+        // (D3) Wrap in text-reveal shell.
         const reveal = document.createElement('div');
         reveal.className = 'text-reveal unlocked-section unlocking';
         reveal.dataset.section = targetId;
@@ -1212,21 +1220,31 @@
         slot.innerHTML = '';        // remove the (now-popped) firefly placeholder
         slot.appendChild(reveal);
 
-        // (D4) Trigger the color transition on the next paint frame.
-        // Two rAFs ensures the browser commits the initial transparent state
-        // before the .lit class flips colors — guaranteeing a transition.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            reveal.classList.add('text-reveal--lit');
-          });
-        });
+        // (D4) Trigger the color transition. Reading offsetHeight forces the
+        //      browser to flush styles synchronously — that's faster and more
+        //      reliable in production than the 2-rAF dance, which can stall
+        //      under heavy CPU load on slow devices. After the read, adding
+        //      .text-reveal--lit reliably triggers the CSS color transition.
+        // eslint-disable-next-line no-unused-expressions
+        reveal.offsetHeight;        // force reflow
+        reveal.classList.add('text-reveal--lit');
 
         // (D5) Drop entrance class after animation
         setTimeout(() => reveal.classList.remove('unlocking'), 1300);
 
-        // (D6) Re-init lucide icons in the new content
+        // (D6) Re-init lucide icons ONLY for icons inside this new fragment.
+        //      Calling lucide.createIcons() with no args scans the entire
+        //      document — gets slower each unlock. Targeting the wrapper is O(1).
         if (window.lucide && typeof window.lucide.createIcons === 'function') {
-          window.lucide.createIcons();
+          try {
+            // Newer lucide API accepts { nodes: [...] }
+            window.lucide.createIcons({
+              nodes: reveal.querySelectorAll('[data-lucide]')
+            });
+          } catch (e) {
+            // Fallback for older versions: full scan
+            window.lucide.createIcons();
+          }
         }
 
         // (D7) Update HUD
