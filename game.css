@@ -1637,3 +1637,69 @@ body:not(.game-ready)::after {
   margin-bottom: 12px;
   color: var(--text-secondary);
 }
+
+/* ============================================
+   PORTFOLIO MODE (default) + END-OF-PAGE GAME INVITATION
+   ============================================ */
+body.portfolio-mode {
+  padding-bottom: 0;
+}
+
+body.portfolio-mode .back-to-top {
+  bottom: 30px;
+}
+
+.play-invite {
+  padding: 90px 0;
+  background: var(--bg-primary);
+}
+
+.play-invite__card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 44px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 168, 80, 0.35);
+  background: linear-gradient(160deg, rgba(26, 21, 12, 0.9), rgba(10, 10, 10, 0.9));
+  box-shadow: 0 0 60px rgba(212, 168, 80, 0.1);
+  text-align: center;
+}
+
+.play-invite__text {
+  max-width: 540px;
+  margin: 0 auto 28px;
+  color: var(--text-secondary);
+}
+
+.play-invite__text b {
+  color: var(--gold-light);
+}
+
+.play-invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.play-invite__note {
+  margin-top: 18px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* A trophy earned quietly: a dot on the HUD button instead of a pop-up */
+.hud__btn--new::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffb547;
+}
+
+.float-text--level {
+  color: #fff1c4;
+}

@@ -52,15 +52,15 @@
   ];
 
   const ACHIEVEMENTS = {
-    'first-light': { name: 'First Light', desc: 'Unlock your first zone.', icon: 'zap' },
-    'halfway': { name: 'Halfway There', desc: 'Unlock half of the zones.', icon: 'map' },
+    'first-light': { name: 'First Light', desc: 'Unlock your first zone.', icon: 'zap', silent: true },
+    'halfway': { name: 'Halfway There', desc: 'Unlock half of the zones.', icon: 'map', silent: true },
     'completionist': { name: 'Completionist', desc: 'Unlock every zone.', icon: 'trophy' },
     'speedrun': { name: 'Speedrunner', desc: 'Unlock every zone in under 2 minutes.', icon: 'fast-forward' },
     'spark-10': { name: 'Spark Catcher', desc: 'Catch 10 sparks.', icon: 'sparkles' },
     'spark-50': { name: 'Firefly Whisperer', desc: 'Catch 50 sparks.', icon: 'star' },
     'combo-5': { name: 'Combo Master', desc: `Chain a ×${MAX_COMBO} spark combo.`, icon: 'zap' },
-    'loot': { name: 'Loot Inspector', desc: 'Open a project or paper.', icon: 'github' },
-    'networker': { name: 'Networker', desc: 'Open a contact link.', icon: 'mail' },
+    'loot': { name: 'Loot Inspector', desc: 'Open a project or paper.', icon: 'github', silent: true },
+    'networker': { name: 'Networker', desc: 'Open a contact link.', icon: 'mail', silent: true },
     'lantern': { name: 'Lantern Keeper', desc: `Score ${ARCADE_TROPHY_SCORE}+ in the arcade side quest.`, icon: 'gamepad' },
     'night-owl': { name: 'Night Owl', desc: 'Explore between midnight and 5 AM.', icon: 'moon', secret: true },
     'konami': { name: 'Old School', desc: '↑ ↑ ↓ ↓ ← → ← → B A', icon: 'gamepad', secret: true },
@@ -76,7 +76,7 @@
   function freshState() {
     return {
       unlocked: [], xp: 0, sparks: 0, bestCombo: 0, achievements: [],
-      startedAt: 0, finishedAt: 0, sound: true, victoryShown: false, skipped: false, hudMin: false,
+      startedAt: 0, finishedAt: 0, sound: true, victoryShown: false, skipped: false, hudMin: false, mode: 'portfolio',
     };
   }
 
@@ -99,6 +99,7 @@
       s.victoryShown = raw.victoryShown === true;
       s.skipped = raw.skipped === true;
       s.hudMin = raw.hudMin === true;
+      s.mode = raw.mode === 'game' ? 'game' : 'portfolio';
     } catch (_) { /* corrupt or blocked storage — start fresh */ }
     return s;
   }
@@ -122,11 +123,12 @@
   /* ═══════════════════════════════════════
      (B) SOUND — synthesized blips (no files, no network)
      ═══════════════════════════════════════ */
+  let arcadeSound = false;
   const sound = (() => {
     let ctx = null;
 
     function audio() {
-      if (!state.sound) return null;
+      if (!state.sound || (state.mode !== 'game' && !arcadeSound)) return null;
       if (!ctx) {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return null;
@@ -264,7 +266,8 @@
     const after = levelIndex(state.xp);
     if (after > before && !quiet) {
       sound.levelUp();
-      levelUpBanner(after);
+      const lv = $('hud-lv')?.getBoundingClientRect();
+      if (lv) floatText(`Level ${after + 1}`, lv.left + lv.width / 2, lv.top - 6, 'level');
       $('hud-lv')?.classList.add('hud__lv--pop');
       setTimeout(() => $('hud-lv')?.classList.remove('hud__lv--pop'), 900);
     }
@@ -276,14 +279,16 @@
     state.achievements.push(id);
     const a = ACHIEVEMENTS[id];
     const xp = a.xp ?? ACHIEVEMENT_XP;
-    if (!quiet) toast({
+    const loud = !quiet && state.mode === 'game' && !a.silent;
+    if (!loud) $('hud-trophies')?.classList.add('hud__btn--new');
+    if (loud) toast({
       kind: 'achievement',
       eyebrow: 'Achievement unlocked' + (xp ? ` · +${xp} XP` : ''),
       title: a.name,
       text: a.desc,
       iconName: a.icon,
     });
-    if (!quiet) sound.achievement();
+    if (loud) sound.achievement();
     gainXP(xp);
     renderTrophies();
     save();
@@ -415,12 +420,6 @@
       const at = origin || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       burst(at.x, at.y, 22, 110);
       sound.unlock();
-      toast({
-        kind: 'zone',
-        eyebrow: `Zone ${slots.indexOf(slot) + 1} of ${slots.length} discovered`,
-        title: zoneName(slot),
-        iconName: 'map',
-      });
       gainXP(ZONE_XP, at);
     } else {
       gainXP(ZONE_XP);
@@ -489,6 +488,7 @@
   let comboTimer = 0;
 
   document.addEventListener('game:spark', (e) => {
+    if (state.mode !== 'game') return;
     const now = performance.now();
     combo = now - lastSparkAt <= COMBO_WINDOW_MS ? Math.min(combo + 1, MAX_COMBO) : 1;
     lastSparkAt = now;
@@ -526,17 +526,17 @@
   document.addEventListener('game:sfx', (e) => {
     const name = e.detail?.name;
     if (!ARCADE_SOUNDS.has(name)) return;
+    arcadeSound = true;
     if (name === 'spark') sound.spark(Math.min(Math.max(1, Number(e.detail.combo) || 1), MAX_COMBO));
     else sound[name]();
+    arcadeSound = false;
   });
 
   document.addEventListener('game:arcade', (e) => {
     const score = Math.max(0, Math.floor(Number(e.detail?.score) || 0));
     const xp = Math.min(score * ARCADE_XP_PER_POINT, ARCADE_XP_CAP);
-    if (xp) {
-      toast({ kind: 'zone', eyebrow: 'Arcade run complete', title: `+${xp} XP`, text: `Lantern Keeper score: ${score}`, iconName: 'gamepad' });
-      gainXP(xp);
-    }
+    if (xp && state.mode === 'game') toast({ kind: 'zone', eyebrow: 'Arcade run complete', title: `+${xp} XP`, text: `Lantern Keeper score: ${score}`, iconName: 'gamepad' });
+    gainXP(xp);
     if (score >= ARCADE_TROPHY_SCORE) award('lantern');
     save();
   });
@@ -618,10 +618,28 @@
     renderHud();
     save();
   });
-  $('hud-reveal').addEventListener('click', () => {
-    revealAll();
-    toast({ kind: 'zone', eyebrow: 'Fast travel', title: 'Every zone is now open', iconName: 'fast-forward' });
+  function exitToPortfolio() {
+    state.mode = 'portfolio';
+    save();
+    window.location.reload();
+  }
+
+  // "Play the quest" from the invitation at the end of the portfolio.
+  function startQuest() {
+    const keep = { sound: true, mode: 'game', achievements: state.achievements, xp: state.xp };
+    Object.assign(state, freshState(), keep);
+    save();
+    window.scrollTo({ top: 0 });
+    window.location.reload();
+  }
+
+  document.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (action === 'play-quest') startQuest();
+    else if (action === 'open-arcade') document.getElementById('side-tab')?.click();
   });
+
+  $('hud-reveal').addEventListener('click', exitToPortfolio);
   $('hud-reset').addEventListener('click', () => {
     if (!window.confirm('Start a new game? Your XP, sparks and trophies will be cleared.')) return;
     clearSave();
@@ -772,11 +790,7 @@
     window.location.reload();
   });
 
-  $('btn-skip').addEventListener('click', () => {
-    enterGame();
-    revealAll();
-    window.scrollTo({ top: 0 });
-  });
+  $('btn-skip').addEventListener('click', exitToPortfolio);
 
   // Esc on the title screen just starts the game.
   title.addEventListener('cancel', (e) => {
@@ -828,7 +842,13 @@
 
   document.body.classList.add('game-ready');
 
-  if (slots.every(isMounted)) {
+  if (state.mode !== 'game') {
+    // Default: a plain, professional portfolio — every section visible, no
+    // HUD, no sounds, no pop-ups. The game is offered at the end of the page.
+    slots.forEach((slot) => mount(slot));
+    document.body.classList.add('game-on', 'portfolio-mode');
+    syncNavLocks();
+  } else if (slots.every(isMounted)) {
     // Returning visitor who has seen everything — straight to the portfolio.
     enterGame();
   } else {

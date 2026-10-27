@@ -6,3 +6,6 @@
 
 # Local Claude Code preview config
 .claude/
+
+# Personal CV source files (keep out of the public repo/site unless deliberately published)
+ CV/

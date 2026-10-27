@@ -647,6 +647,28 @@ img {
   transform: scale(1.08);
 }
 
+/* Project without a screenshot: a glowing icon instead of a photo */
+.project-image--icon {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(212, 168, 80, 0.22), transparent 60%),
+    linear-gradient(160deg, #15110a, #0a0a0a);
+  color: var(--gold-light);
+}
+
+.project-image--icon > .icon {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 18px rgba(255, 215, 130, 0.45));
+  transition: transform 0.6s ease;
+}
+
+.project-card:hover .project-image--icon > .icon {
+  transform: scale(1.08);
+}
+
 .project-image-overlay {
   position: absolute;
   inset: 0;
@@ -930,9 +952,19 @@ img {
   color: var(--gold-primary);
 }
 
-.hero-contact-bar a svg {
+.hero-contact-bar a svg,
+.hero-contact-bar > span svg {
   width: 14px;
   height: 14px;
+}
+
+/* Non-link facts in the contact bar (e.g. location) */
+.hero-contact-bar > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 
 /* Three quick facts under the tagline */
@@ -1143,6 +1175,13 @@ img {
   gap: 28px;
 }
 
+/* Four categories read best as a balanced 2 × 2 on wider screens */
+@media (min-width: 769px) {
+  .skills-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .skill-category {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -1257,6 +1296,18 @@ img {
   font-size: 0.9rem;
   color: var(--text-secondary);
   margin-bottom: 6px;
+}
+
+.education-coursework {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.education-coursework b {
+  color: var(--gold-light);
+  font-weight: 600;
 }
 
 .education-year {
