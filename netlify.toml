@@ -1,27 +1,93 @@
 [build]
   publish = "."
 
+# ─────────────────────────────────────────────
+# Security headers (all paths)
+#  - CSP: only first-party scripts; fonts from Google; images from self + Unsplash.
+#    Trusted Types block HTML-string DOM sinks (innerHTML etc.) → no DOM XSS.
+#    Must stay in sync with the <meta> CSP in index.html.
+#  - frame-ancestors / X-Frame-Options: block clickjacking via <iframe>.
+#  - CORP same-origin: other sites can't embed/hotlink these resources.
+# ─────────────────────────────────────────────
 [[headers]]
   for = "/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/index.html"
-  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://images.unsplash.com; connect-src 'self'; media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests; require-trusted-types-for 'script'; trusted-types 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=(), hid=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), browsing-topics=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+    X-Permitted-Cross-Domain-Policies = "none"
     Cache-Control = "public, max-age=0, must-revalidate"
 
+# ─────────────────────────────────────────────
+# Caching. File names are not content-hashed, so CSS/JS/JSON must revalidate.
+# Netlify serves ETags, so revalidation is cheap.
+# ─────────────────────────────────────────────
 [[headers]]
-  for = "/*.css"
+  for = "/images/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=604800"
 
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# ─────────────────────────────────────────────
+# Never serve repository/tooling files, even though `publish = "."`.
+# (Unknown paths get the themed 404.html automatically — there is no
+# catch-all rewrite, so missing pages return a real 404 instead of the
+# homepage with a 200.)
+# ─────────────────────────────────────────────
+[[redirects]]
+  from = "/.git/*"
+  to = "/404.html"
+  status = 404
+  force = true
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+  from = "/.netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.claude/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.DS_Store"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/images/.DS_Store"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/images/cert/.DS_Store"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/README.md"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true

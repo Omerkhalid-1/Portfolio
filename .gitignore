@@ -1,2 +1,8 @@
 # Local Netlify folder
 .netlify
+
+# macOS Finder metadata (leaks directory listings if published)
+.DS_Store
+
+# Local Claude Code preview config
+.claude/

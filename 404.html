@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lost in the dark — Omer Khalid</title>
+  <meta name="robots" content="noindex" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'none'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'" />
+  <!-- No scripts at all on this page. It is served for any missing path,
+       however deeply nested, so every URL resolves against <base>.
+       GitHub Pages project site → "/Portfolio/". If the site moves to a domain
+       root (custom domain, Netlify, or an <user>.github.io repo) → "/". -->
+  <base href="/Portfolio/" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Outfit:wght@700;800&family=Silkscreen&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="game.css" />
+</head>
+
+<body>
+  <div class="nebula" aria-hidden="true">
+    <div class="nebula__blob nebula__blob--1"></div>
+    <div class="nebula__blob nebula__blob--2"></div>
+    <div class="nebula__blob nebula__blob--3"></div>
+  </div>
+
+  <main class="lost">
+    <span class="unlock-firefly lost__firefly" aria-hidden="true"></span>
+    <p class="lost__code">Error 404 · Zone not found</p>
+    <h1 class="lost__title">You wandered off the map</h1>
+    <p class="lost__text">There's no firefly on this path — only darkness. Head back and keep exploring.</p>
+    <a class="btn-start" href="./">Return to the quest</a>
+  </main>
+</body>
+
+</html>
